@@ -1,0 +1,50 @@
+﻿@inherits LayoutComponentBase
+@inject NavigationManager NavigationManager
+
+<div class="page">
+    <AuthorizeView>
+        <Authorized>
+            @if (MostrarSidebar)
+            {
+                <div class="sidebar">
+                    <NavMenu />
+                </div>
+            }
+        </Authorized>
+        <NotAuthorized>
+            <!-- Aquí puedes agregar el contenido para usuarios no autorizados si es necesario -->
+        </NotAuthorized>
+    </AuthorizeView>
+
+    <main>
+        <div class="top-row px-4">
+            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>
+
+@code {
+    private string currentUrl = "";
+
+    protected override void OnInitialized()
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += (_, args) =>
+        {
+            currentUrl = NavigationManager.ToBaseRelativePath(args.Location);
+            InvokeAsync(StateHasChanged);
+        };
+    }
+
+    private bool MostrarSidebar => !string.IsNullOrEmpty(currentUrl) && currentUrl != "";
+}
