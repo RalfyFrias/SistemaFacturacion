@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SistemaFacturacion.Migrations
 {
     /// <inheritdoc />
-    public partial class CreateIdentitySchema : Migration
+    public partial class nueva : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -48,6 +48,101 @@ namespace SistemaFacturacion.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_AspNetUsers", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CuentasXcobrar",
+                columns: table => new
+                {
+                    CuentasXcobrarId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FechaCreacion = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    NombreCliente = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Direccion = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Telefono = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Cedula = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    MetodoPago = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CuentasXcobrar", x => x.CuentasXcobrarId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Facturas",
+                columns: table => new
+                {
+                    VentasId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FechaCreacion = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    NombreCliente = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    MetodoPago = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Facturas", x => x.VentasId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Financiamientos",
+                columns: table => new
+                {
+                    FinanciamientoId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FechaCreacion = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    NombreCliente = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Descripcion = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Direccion = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Telefono = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    FormaPago = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CantidadPago = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    TotalPorPago = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    ganancia = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Inicial = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Cedula = table.Column<string>(type: "nvarchar(11)", nullable: false),
+                    MetodoPago = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Financiamientos", x => x.FinanciamientoId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Productos",
+                columns: table => new
+                {
+                    ProductoId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Nombre = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Descripcion = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Costo = table.Column<int>(type: "int", nullable: false),
+                    Cantidad = table.Column<int>(type: "int", nullable: false),
+                    PorcentajeGanancia = table.Column<int>(type: "int", nullable: false),
+                    PrecioVenta = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Productos", x => x.ProductoId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Reparaciones",
+                columns: table => new
+                {
+                    ReparacionesId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FechaCreacion = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    NombreCliente = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Descripcion = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    MetodoPago = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Pago = table.Column<int>(type: "int", nullable: false),
+                    Total = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Reparaciones", x => x.ReparacionesId);
                 });
 
             migrationBuilder.CreateTable(
@@ -156,6 +251,48 @@ namespace SistemaFacturacion.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "FacturaDetalle",
+                columns: table => new
+                {
+                    VentaDetalleId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ProductoId = table.Column<int>(type: "int", nullable: false),
+                    Cantidad = table.Column<int>(type: "int", nullable: false),
+                    PrecioVenta = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Descuento = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Impuesto = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    SubTotal = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    CuentasXcobrarId = table.Column<int>(type: "int", nullable: true),
+                    FinanciamientoId = table.Column<int>(type: "int", nullable: true),
+                    ReparacionesId = table.Column<int>(type: "int", nullable: true),
+                    VentasId = table.Column<int>(type: "int", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FacturaDetalle", x => x.VentaDetalleId);
+                    table.ForeignKey(
+                        name: "FK_FacturaDetalle_CuentasXcobrar_CuentasXcobrarId",
+                        column: x => x.CuentasXcobrarId,
+                        principalTable: "CuentasXcobrar",
+                        principalColumn: "CuentasXcobrarId");
+                    table.ForeignKey(
+                        name: "FK_FacturaDetalle_Facturas_VentasId",
+                        column: x => x.VentasId,
+                        principalTable: "Facturas",
+                        principalColumn: "VentasId");
+                    table.ForeignKey(
+                        name: "FK_FacturaDetalle_Financiamientos_FinanciamientoId",
+                        column: x => x.FinanciamientoId,
+                        principalTable: "Financiamientos",
+                        principalColumn: "FinanciamientoId");
+                    table.ForeignKey(
+                        name: "FK_FacturaDetalle_Reparaciones_ReparacionesId",
+                        column: x => x.ReparacionesId,
+                        principalTable: "Reparaciones",
+                        principalColumn: "ReparacionesId");
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
@@ -194,6 +331,26 @@ namespace SistemaFacturacion.Migrations
                 column: "NormalizedUserName",
                 unique: true,
                 filter: "[NormalizedUserName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FacturaDetalle_CuentasXcobrarId",
+                table: "FacturaDetalle",
+                column: "CuentasXcobrarId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FacturaDetalle_FinanciamientoId",
+                table: "FacturaDetalle",
+                column: "FinanciamientoId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FacturaDetalle_ReparacionesId",
+                table: "FacturaDetalle",
+                column: "ReparacionesId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_FacturaDetalle_VentasId",
+                table: "FacturaDetalle",
+                column: "VentasId");
         }
 
         /// <inheritdoc />
@@ -215,10 +372,28 @@ namespace SistemaFacturacion.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "FacturaDetalle");
+
+            migrationBuilder.DropTable(
+                name: "Productos");
+
+            migrationBuilder.DropTable(
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");
+
+            migrationBuilder.DropTable(
+                name: "CuentasXcobrar");
+
+            migrationBuilder.DropTable(
+                name: "Facturas");
+
+            migrationBuilder.DropTable(
+                name: "Financiamientos");
+
+            migrationBuilder.DropTable(
+                name: "Reparaciones");
         }
     }
 }

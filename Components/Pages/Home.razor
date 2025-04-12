@@ -1,7 +1,145 @@
-﻿@page "/"
+﻿@page "/Dashboard"
+@inject ReparacionesService reparacionesService
+@inject FacturasService facturasService
+@inject ProductosService productosService
+@inject FinanciamientoService financiamientoService
+@inject CuentasXcobrarService cuentasXcobrarService
+@inject NavigationManager navigation
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Dashboard - Casa Index</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="container mt-4">
+    <div class="row g-4">
+        <!-- Resumen General de Reparaciones -->
+        <div class="col-md-4">
+            <div class="card shadow-lg">
+                <div class="card-header bg-danger text-white text-center">
+                    <h5><strong>Reparaciones</strong></h5>
+                </div>
+                <div class="card-body text-center">
+                    <p><strong>Total:</strong> @reparaciones.Count</p>
+                    <h5 class="text-success"><strong>Ingresos:</strong> $@TotalIngresos.ToString("N2")</h5>
+                    <h5 class="text-danger "><strong>Reparaciones:</strong> $@TotalReparaciones.ToString("N2")</h5>
+                </div>
+            </div>
+        </div>
 
-Welcome to your new app.
+        <!-- Resumen General de Financiamientos -->
+        <div class="col-md-4">
+            <div class="card shadow-lg">
+                <div class="card-header bg-danger text-white text-center">
+                    <h5><strong>Financiamientos</strong></h5>
+                </div>
+                <div class="card-body text-center">
+                    <p><strong>Total:</strong> @financiamientos.Count</p>
+                    <h5 class="text-success"><strong>Monto Total:</strong> $@TotalSubTotal.ToString("N2")</h5>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen General de Productos -->
+        <div class="col-md-4">
+            <div class="card shadow-lg">
+                <div class="card-header bg-danger text-white text-center">
+                    <h5><strong>Productos</strong></h5>
+                </div>
+                <div class="card-body text-center">
+                    <h5 class="text-info"><strong>Total:</strong> @productos.Count</h5>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen General de Cuentas por Cobrar -->
+        <div class="col-md-4">
+            <div class="card shadow-lg">
+                <div class="card-header bg-danger text-white text-center">
+                    <h5><strong>Cuentas por Cobrar</strong></h5>
+                </div>
+                <div class="card-body text-center">
+                    <p><strong>Total:</strong> @cuentasXcobrar.Count</p>
+                    <h5 class="text-danger"><strong>Deuda Total:</strong> $@TotalcuentasXcobrar.ToString("N2")</h5>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen General de Ventas -->
+        <div class="col-md-4">
+            <div class="card shadow-lg">
+                <div class="card-header bg-danger text-white text-center">
+                    <h5><strong>Ventas</strong></h5>
+                </div>
+                <div class="card-body text-center">
+                    <p><strong>Facturas:</strong> @facturas.Count</p>
+                    <h5 class="text-success"><strong>Ingresos:</strong> $@TotalVentas.ToString("N2")</h5>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen General de Inventario -->
+        <div class="col-md-4">
+            <div class="card shadow-lg">
+                <div class="card-header bg-danger text-white text-center">
+                    <h5><strong>Inventario</strong></h5>
+                </div>
+                <div class="card-body text-center">
+                    <p><strong>Productos:</strong> @productos.Count</p>
+                    <h5 class="text-warning"><strong>Valor Total:</strong> $@productos.Sum(p => p.Cantidad * p.PrecioVenta).ToString("N2")</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@code {
+    private List<Reparaciones> reparaciones = new List<Reparaciones>();
+    private List<Financiamiento> financiamientos = new List<Financiamiento>();
+    public List<Productos> productos = new List<Productos>();
+    public List<CuentasXcobrar> cuentasXcobrar = new List<CuentasXcobrar>();
+    public List<Ventas> facturas = new List<Ventas>();
+
+    public decimal TotalVentas { get; set; }
+    public decimal TotalcuentasXcobrar { get; set; }
+    private bool loading = true;
+    private decimal TotalIngresos => reparaciones.Sum(r => r.Pago);
+    public decimal TotalReparaciones { get; set; }
+    public decimal TotalPagar { get; set; }
+    public decimal TotalSubTotal { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        //reparaciones
+        reparaciones = await reparacionesService.Listar(e => true);
+        TotalReparaciones = reparaciones.Sum(f => f.VentasDetalles.Sum(fd => fd.SubTotal - (fd.SubTotal * (fd.Descuento / 100)) + fd.Impuesto)) + reparaciones.Sum(r => r.Pago);
+
+        //financiamientos
+        financiamientos = await financiamientoService.Listar(e => true);
+        TotalPagar = financiamientos.Sum(f => f.TotalPorPago);
+        TotalSubTotal = financiamientos.Sum(f => f.VentasDetalles.Sum(v => v.SubTotal) + f.ganancia - f.Inicial);
+
+        //Productos
+        productos = await productosService.Listar(e => true);
+
+        //CuentasXcobrar
+        cuentasXcobrar = await cuentasXcobrarService.Listar(e => true);
+        TotalcuentasXcobrar = cuentasXcobrar.Sum(f => f.VentasDetalles.Sum(fd => fd.SubTotal - (fd.SubTotal * (fd.Descuento / 100)) + fd.Impuesto));
+
+        //Ventas
+        facturas = await facturasService.Listar(e => true);
+        TotalVentas = facturas.Sum(f => f.FacturaDetalle.Sum(fd => fd.SubTotal - (fd.SubTotal * (fd.Descuento / 100)) + fd.Impuesto));
+
+
+        //Inventario
+
+
+        loading = false;
+        StateHasChanged();
+    }
+
+    public void IrADetalles(int id)
+    {
+        navigation.NavigateTo($"/ViewReparacion/reparacionId={id}");
+    }
+}
+
+

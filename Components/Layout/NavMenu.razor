@@ -1,8 +1,10 @@
 ﻿@implements IDisposable
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @using Microsoft.AspNetCore.Components.Routing
-@using Microsoft.JSInterop
+@using System.Security.Claims
 
 <div class="top-row ps-3 navbar navbar-dark bg-danger">
     <div class="container-fluid">
@@ -11,104 +13,89 @@
 </div>
 
 <input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="flex-column">
+        @if (usuarioActual?.Identity?.IsAuthenticated == true &&
+        usuarioActual.Identity.Name == "Admin@gmail.com")
+        {
+            <!-- Menú restringido para admin@example.com -->
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="/Dashboard">
+                    <span class="bi bi-speedometer2" aria-hidden="true"></span> Dashboard
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="productos">
+                    <span class="bi bi-cart" style="font-size: 1.5em;" aria-hidden="true"></span> Productos
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="inventario">
+                    <span class="bi bi-file-earmark-bar-graph" style="font-size: 1.5em;" aria-hidden="true"></span> Inventario
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="Financiamientos">
+                    <span class="bi bi-currency-dollar" style="font-size: 1.5em;" aria-hidden="true"></span> Financiamientos
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="CuentasXcobrar">
+                    <span class="bi bi-file-earmark-text" style="font-size: 1.5em;" aria-hidden="true"></span> Cuentas por Cobrar
+                </NavLink>
+            </div>
+        }
+        else if (usuarioActual?.Identity?.IsAuthenticated == true &&
+        usuarioActual.Identity.Name == "User@gmail.com")
+        {
+            <!-- Menú completo para User@gmail.com -->
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="/Dashboard">
+                    <span class="bi bi-speedometer2" aria-hidden="true"></span> Dashboard
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="productos">
+                    <span class="bi bi-cart" style="font-size: 1.5em;" aria-hidden="true"></span> Productos
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="inventario">
+                    <span class="bi bi-file-earmark-bar-graph" style="font-size: 1.5em;" aria-hidden="true"></span> Inventario
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="Ventas">
+                    <span class="bi bi-file-text" style="font-size: 1.5em;" aria-hidden="true"></span> Ventas
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="Financiamientos">
+                    <span class="bi bi-currency-dollar" style="font-size: 1.5em;" aria-hidden="true"></span> Financiamientos
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="CuentasXcobrar">
+                    <span class="bi bi-file-earmark-text" style="font-size: 1.5em;" aria-hidden="true"></span> Cuentas por Cobrar
+                </NavLink>
+            </div>
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="Reparaciones">
+                    <span class="bi bi-tools" style="font-size: 1.5em;" aria-hidden="true"></span> Reparaciones
+                </NavLink>
+            </div>
+        }
+        
 
-        <!-- Menú para Admin -->
-        <AuthorizeView Roles="Admin">
-            <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/Dashboard">
-                        <span class="bi bi-speedometer2" aria-hidden="true"></span> Dashboard
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/Ventas">
-                        <span class="bi bi-file-text align-items-center d-flex justify-content-center" style="font-size: 1.5em;" aria-hidden="true"></span> Ventas
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/Financiamientos">
-                        <span class="bi bi-currency-dollar align-items-center d-flex justify-content-center" style="font-size: 1.5em;" aria-hidden="true"></span> Financiamientos
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/CuentasXcobrar">
-                        <span class="bi bi-file-earmark-text align-items-center d-flex justify-content-center" style="font-size: 1.5em;" aria-hidden="true"></span> Cuentas por Cobrar
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/Reparaciones">
-                        <span class="bi bi-tools align-items-center d-flex justify-content-center" style="font-size: 1.5em;" aria-hidden="true"></span> Reparaciones
-                    </NavLink>
-                </div>
-            </Authorized>
-        </AuthorizeView>
-
-        <!-- Menú para Empleado -->
-        <AuthorizeView Roles="Empleado">
-            <Authorized>
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/Dashboard">
-                        <span class="bi bi-speedometer2" aria-hidden="true"></span> Dashboard
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/Productos">
-                        <span class="bi bi-cart align-items-center d-flex justify-content-center" style="font-size: 1.5em;" aria-hidden="true"></span> Productos
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/Inventario">
-                        <span class="bi bi-file-earmark-bar-graph align-items-center d-flex justify-content-center" style="font-size: 1.5em;" aria-hidden="true"></span> Inventario
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/Ventas">
-                        <span class="bi bi-file-text align-items-center d-flex justify-content-center" style="font-size: 1.5em;" aria-hidden="true"></span> Ventas
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/Financiamientos">
-                        <span class="bi bi-currency-dollar align-items-center d-flex justify-content-center" style="font-size: 1.5em;" aria-hidden="true"></span> Financiamientos
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/CuentasXcobrar">
-                        <span class="bi bi-file-earmark-text align-items-center d-flex justify-content-center" style="font-size: 1.5em;" aria-hidden="true"></span> Cuentas por Cobrar
-                    </NavLink>
-                </div>
-
-                <div class="nav-item px-3">
-                    <NavLink class="nav-link" href="/Reparaciones">
-                        <span class="bi bi-tools align-items-center d-flex justify-content-center" style="font-size: 1.5em;" aria-hidden="true"></span> Reparaciones
-                    </NavLink>
-                </div>
-            </Authorized>
-        </AuthorizeView>
-
-        <!-- Logout común para todos los usuarios autenticados -->
+        <!-- Logout siempre visible -->
         <div class="nav-item px-3">
             <NavLink class="nav-link" href="/" Match="NavLinkMatch.All" @onclick="CerrarSidebar">
                 <span class="bi bi-person-badge-nav-menu" aria-hidden="true"></span> Logout
             </NavLink>
         </div>
 
-        <!-- Menú para usuarios no autenticados -->
         <AuthorizeView>
-            <Authorized>
-
-            </Authorized>
+            <Authorized></Authorized>
             <NotAuthorized>
                 <div class="nav-item px-3">
                     <NavLink class="nav-link" href="Identity/Account/Login">
@@ -117,16 +104,19 @@
                 </div>
             </NotAuthorized>
         </AuthorizeView>
-
     </nav>
 </div>
 
+
 @code {
     private string? currentUrl;
+    private ClaimsPrincipal? usuarioActual;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        usuarioActual = authState.User;
         NavigationManager.LocationChanged += OnLocationChanged;
     }
 

@@ -1,68 +1,100 @@
-﻿@page "/Account/Login"
+﻿@page "/"
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
 @using SistemaFacturacion.Data
-
 @inject SignInManager<ApplicationUser> SignInManager
+@inject UserManager<ApplicationUser> UserManager
 @inject ILogger<Login> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Log in</PageTitle>
+<PageTitle>Iniciar Sesión</PageTitle>
 
-<h1>Log in</h1>
-<div class="row">
-    <div class="col-lg-6">
-        <section>
-            <StatusMessage Message="@errorMessage" />
-            <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
-                <DataAnnotationsValidator />
-                <h2>Use a local account to log in.</h2>
-                <hr />
-                <ValidationSummary class="text-danger" role="alert" />
-                <div class="form-floating mb-3">
-                    <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                    <label for="Input.Email" class="form-label">Email</label>
-                    <ValidationMessage For="() => Input.Email" class="text-danger" />
-                </div>
-                <div class="form-floating mb-3">
-                    <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
-                    <label for="Input.Password" class="form-label">Password</label>
-                    <ValidationMessage For="() => Input.Password" class="text-danger" />
-                </div>
-                <div class="checkbox mb-3">
-                    <label class="form-label">
-                        <InputCheckbox @bind-Value="Input.RememberMe" class="darker-border-checkbox form-check-input" />
-                        Remember me
-                    </label>
-                </div>
-                <div>
-                    <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
-                </div>
-                <div>
-                    <p>
-                        <a href="Account/ForgotPassword">Forgot your password?</a>
-                    </p>
-                    <p>
-                        <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Register as a new user</a>
-                    </p>
-                    <p>
-                        <a href="Account/ResendEmailConfirmation">Resend email confirmation</a>
-                    </p>
-                </div>
-            </EditForm>
-        </section>
-    </div>
-    <div class="col-lg-4 col-lg-offset-2">
-        <section>
-            <h3>Use another service to log in.</h3>
-            <hr />
-            <ExternalLoginPicker />
-        </section>
-    </div>
+<div class="login-container">
+    <img src="Imagenes/logos.jpg" alt="Logo" class="login-logo" />
+    <h2 class="login-title">Iniciar Sesión</h2>
+
+    <StatusMessage Message="@errorMessage" />
+
+    <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
+        <DataAnnotationsValidator />
+        <ValidationSummary class="text-danger" role="alert" />
+
+        <div class="form-group">
+            <InputText @bind-Value="Input.Email" class="form-control input-lg" autocomplete="username" placeholder="Correo electrónico" />
+            <ValidationMessage For="() => Input.Email" class="text-danger" />
+        </div>
+
+        <div class="form-group">
+            <InputText type="password" @bind-Value="Input.Password" class="form-control input-lg" autocomplete="current-password" placeholder="Contraseña" />
+            <ValidationMessage For="() => Input.Password" class="text-danger" />
+        </div>
+
+        <div class="form-check">
+            <InputCheckbox @bind-Value="Input.RememberMe" class="form-check-input" />
+            <label class="form-check-label">Recordarme</label>
+        </div>
+
+        <button type="submit" class="btn-danger btn-lg w-100">Iniciar Sesión</button>
+    </EditForm>
+
+    <p>
+        <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Registrar un nuevo usuario</a>
+    </p>
 </div>
+
+<style>
+    .login-container {
+        max-width: 500px;
+        margin: 60px auto;
+        padding: 30px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        text-align: center;
+    }
+
+    .login-logo {
+        width: 100px;
+        margin-bottom: 20px;
+    }
+
+    .login-title {
+        font-size: 28px;
+        font-weight: bold;
+        color: white;
+        background-color: #007bff;
+        padding: 12px;
+        border-radius: 6px;
+        margin-bottom: 25px;
+    }
+
+    .form-control {
+        margin-bottom: 18px;
+        font-size: 18px;
+        padding: 12px;
+        border-radius: 6px;
+    }
+
+    .btn-danger {
+        background-color: #007bff;
+        border: none;
+        padding: 14px;
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+        .btn-danger :hover {
+            background-color: #0056b3;
+        }
+
+    .form-check {
+        text-align: left;
+        margin-bottom: 20px;
+    }
+</style>
 
 @code {
     private string? errorMessage;
@@ -80,35 +112,44 @@
     {
         if (HttpMethods.IsGet(HttpContext.Request.Method))
         {
-            // Clear the existing external cookie to ensure a clean login process
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
         }
     }
 
     public async Task LoginUser()
     {
-        // This doesn't count login failures towards account lockout
-        // To enable password failures to trigger account lockout, set lockoutOnFailure: true
         var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
         if (result.Succeeded)
         {
-            Logger.LogInformation("User logged in.");
-            RedirectManager.RedirectTo(ReturnUrl);
+            var user = await UserManager.FindByEmailAsync(Input.Email);
+            if (user != null)
+            {
+                if (await UserManager.IsInRoleAsync(user, "Admin"))
+                {
+                    NavigationManager.NavigateTo("/Dashboard"); // Redirige al Dashboard para Admin
+                }
+                else if (await UserManager.IsInRoleAsync(user, "User"))
+                {
+                    NavigationManager.NavigateTo("/Dashboard"); // Redirige al Dashboard para User
+                }
+                else
+                {
+                    errorMessage = "No tienes un rol asignado.";
+                }
+            }
         }
         else if (result.RequiresTwoFactor)
         {
-            RedirectManager.RedirectTo(
-                "Account/LoginWith2fa",
-                new() { ["returnUrl"] = ReturnUrl, ["rememberMe"] = Input.RememberMe });
+            RedirectManager.RedirectTo("Account/LoginWith2fa", new() { ["returnUrl"] = ReturnUrl, ["rememberMe"] = Input.RememberMe });
         }
         else if (result.IsLockedOut)
         {
-            Logger.LogWarning("User account locked out.");
+            Logger.LogWarning("Cuenta bloqueada.");
             RedirectManager.RedirectTo("Account/Lockout");
         }
         else
         {
-            errorMessage = "Error: Invalid login attempt.";
+            errorMessage = "Error: Usuario o contraseña incorrectos.";
         }
     }
 
@@ -122,7 +163,7 @@
         [DataType(DataType.Password)]
         public string Password { get; set; } = "";
 
-        [Display(Name = "Remember me?")]
+        [Display(Name = "Recordarme")]
         public bool RememberMe { get; set; }
     }
 }
