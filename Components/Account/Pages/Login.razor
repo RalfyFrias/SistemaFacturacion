@@ -25,17 +25,17 @@
         <ValidationSummary class="text-danger" role="alert" />
 
         <div class="form-group">
-            <InputText @bind-Value="Input.Email" class="form-control input-lg" autocomplete="username" placeholder="Correo electrónico" />
+            <InputText @bind-value="Input.Email" class="form-control input-lg" autocomplete="username" placeholder="Correo electrónico" />
             <ValidationMessage For="() => Input.Email" class="text-danger" />
         </div>
 
         <div class="form-group">
-            <InputText type="password" @bind-Value="Input.Password" class="form-control input-lg" autocomplete="current-password" placeholder="Contraseña" />
+            <InputText type="password" @bind-value="Input.Password" class="form-control input-lg" autocomplete="current-password" placeholder="Contraseña" />
             <ValidationMessage For="() => Input.Password" class="text-danger" />
         </div>
 
         <div class="form-check">
-            <InputCheckbox @bind-Value="Input.RememberMe" class="form-check-input" />
+            <InputCheckbox @bind-value="Input.RememberMe" class="form-check-input" />
             <label class="form-check-label">Recordarme</label>
         </div>
 
