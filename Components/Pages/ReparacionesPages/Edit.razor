@@ -1,0 +1,349 @@
+﻿@page "/EditReparacion"
+@page "/EditReparacion/reparacionId={reparacionId:int}"
+@using Radzen
+@rendermode InteractiveServer
+@inject NavigationManager navigation
+@inject ReparacionesService reparacionesService
+@inject ProductosService productosService
+@inject NotificationService notificationService
+
+<PageTitle>Modificar Reparación</PageTitle>
+
+<EditForm Model="reparacion" OnValidSubmit="Modificar">
+    <DataAnnotationsValidator />
+    <div class="container mt-4">
+        <div class="card-header bg-danger text-white text-center">
+
+            <h3 class="text-center"><strong>Modificar Reparación</strong></h3>
+        </div>
+        <div class="card shadow-lg p-4">
+            @*Header*@
+            
+
+            @*Body*@
+            <div class="card-body">
+                @*Fila #1*@
+                <div class="row mb-3">
+                    <div class="col-4">
+                        @*Nombre Cliente*@
+                        <label class="form-label" for="nombre"><strong>Nombre Cliente:</strong></label>
+                        <InputText id="nombre" class="form-control" @bind-Value="reparacion.NombreCliente" placeholder="Ej: Juan Pérez"></InputText>
+                        <ValidationMessage For="@(() => reparacion.NombreCliente)"></ValidationMessage>
+                    </div>
+                    <div class="col-6">
+                        @*Descripción*@
+                        <label class="form-label" for="descripcion"><strong>Descripción:</strong></label>
+                        <InputText id="descripcion" class="form-control" @bind-Value="reparacion.Descripcion" placeholder="Ej: Reparación de pantalla"></InputText>
+                        <ValidationMessage For="@(() => reparacion.Descripcion)"></ValidationMessage>
+                    </div>
+                </div>
+
+                @*Fila #2*@
+                <div class="row mb-3">
+                   
+
+                    <div class="col-4">
+                        @*Método de Pago*@
+                        <label class="form-label" for="metodo"><strong>Método de Pago:</strong></label>
+                        <InputText id="metodo" class="form-control" @bind-Value="reparacion.MetodoPago" placeholder="Ej: Tarjeta, Efectivo"></InputText>
+                        <ValidationMessage For="@(() => reparacion.MetodoPago)"></ValidationMessage>
+                    </div>
+
+                    <div class="col-4">
+                        @*Pago*@
+                        <label class="form-label" for="pago"><strong>Pago:</strong></label>
+                        <InputNumber id="pago" class="form-control" @bind-Value="reparacion.Pago"></InputNumber>
+                        <ValidationMessage For="@(() => reparacion.Pago)"></ValidationMessage>
+                    </div>
+                </div>
+            </div>
+
+            @*Detalle Financiamiento*@
+            <fieldset class="border-danger  border border-2">
+                @*Body*@
+                <div class="card-body">
+                    <section class="row mb-4">
+                        <div class="row align-content-center">
+                            <div class="col-4">
+                                <!-- Búsqueda de Producto -->
+                                <label class="form-label" for="producto"><strong>Producto:</strong></label>
+
+                                <div class="d-flex">
+                                    <InputText id="producto" class="form-control" @bind-Value="productoBuscar" placeholder="Escriba el nombre"></InputText>
+
+                                    <button type="button" class="btn btn-outline-danger  ms-2" @onclick="FiltrarProductos">
+                                        Buscar
+                                    </button>
+
+                                    <button type="button" class="btn btn-outline-success" @onclick="AgregarDetalle"><i class="bi bi-plus-circle" /> Agregar</button>
+                                </div>
+
+                                <ValidationMessage For="@(() => productoBuscar)"></ValidationMessage>
+
+                                <!-- Lista de Productos Filtrados -->
+                                @if (productosFiltrados.Any())
+                                {
+                                    <ul class="list-group mt-2">
+                                        @foreach (var producto in productosFiltrados)
+                                        {
+                                            <li class="list-group-item" @onclick="() => SeleccionarProducto(producto)">
+                                                @producto.Nombre
+                                            </li>
+                                        }
+                                    </ul>
+                                }
+
+
+                            </div>
+                            <div class="col-4">
+                                @*Cantidad*@
+                                <label class="form-label" for="cantidad"><strong>Cantidad:</strong></label>
+                                <InputNumber id="cantidad" class="form-control" @bind-Value="cantidad" @onblur="CalcularMonto"></InputNumber>
+                            </div>
+                            <div class="col-4">
+                                @*Descuento*@
+                                <label class="form-label" for="descuento"><strong>Descuento (%):</strong></label>
+                                <InputNumber id="descuento" class="form-control" @bind-Value="descuento" @oninput="CalcularMonto"></InputNumber>
+                            </div>
+
+                        </div>
+                    </section>
+                    <section>
+                        @if (reparacion.VentasDetalles.Count > 0)
+                        {
+                            <table class="table table-bordered miTabla">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Cantidad</th>
+                                        <th>Precio de Venta</th>
+                                        <th>Descuento (%)</th>
+                                        <th>SubTotal</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var detalle in reparacion.VentasDetalles)
+                                    {
+                                        <tr>
+                                            <td>@ObtenerNombreProducto(detalle.ProductoId)</td>
+                                            <td>@detalle.Cantidad</td>
+                                            <td>@detalle.PrecioVenta.ToString("N2")</td>
+                                            <td>@detalle.Descuento.ToString("N2")</td>
+                                            <td>@detalle.SubTotal.ToString("N2")</td>
+                                            <td><button type="button" class="btn btn-outline-danger" @onclick="()=> EliminarDetalle(detalle)"><i class="bi bi-trash3-fill" /></button></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+
+                            <div class="row">
+                                <div class="col text-start">
+                                    <p><strong>Total de Productos: </strong>@reparacion.VentasDetalles.Count</p>
+                                </div>
+                            </div>
+
+
+                            <div class="row">
+                                <div class="col text-end">
+                                    <h5><strong>Total:</strong> $@reparacion.Total.ToString("N2")</h5>
+                                </div>
+                            </div>
+                        }
+
+                    </section>
+                </div>
+            </fieldset>
+        </div>
+
+            @*Footer*@
+            <div class="card-footer d-flex justify-content-center">
+                <div class="px-2">
+                    <button type="button" class="btn btn-outline-danger " @onclick="Volver">
+                        <i class="bi bi-box-arrow-left"></i> Volver
+                    </button>
+                </div>
+                <button type="submit" class="btn btn-outline-success">
+                    <i class="bi bi-floppy-fill"></i> Modificar
+                </button>
+            </div>
+      </div>
+</EditForm>
+
+<RadzenNotification />
+
+@code {
+    [Parameter]
+    public int reparacionId { get; set; }
+    public Reparaciones reparacion { get; set; } = new Reparaciones();
+    public int productoId { get; set; }
+    public int cantidad { get; set; }
+    public decimal precioVenta { get; set; }
+    public decimal descuento { get; set; }
+    public decimal Total { get; set; }
+    public List<Productos> productos = new List<Productos>();
+    public string productoBuscar { get; set; } = string.Empty;
+    public List<Productos> productosFiltrados { get; set; } = new List<Productos>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Cargar productos
+        productos = await productosService.Listar(e => true);
+
+        // Cargar la factura existente con sus detalles
+        reparacion = await reparacionesService.ObtenerPorId(reparacionId);
+        if (reparacion == null)
+        {
+            // Redirigir si no se encuentra la factura
+            Volver();
+            return;
+        }
+
+        // Verificar si la factura tiene detalles
+        if (reparacion.VentasDetalles == null || !reparacion.VentasDetalles.Any())
+        {
+            reparacion.VentasDetalles = new List<VentasDetalle>(); // Asegurar que no sea null
+        }
+    }
+
+
+    public async Task FiltrarProductos()
+    {
+        if (string.IsNullOrEmpty(productoBuscar))
+        {
+            productosFiltrados = new List<Productos>(); // Si está vacío, no mostramos productos
+        }
+        else
+        {
+            productosFiltrados = productos
+                .Where(p => p.Nombre.Contains(productoBuscar, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        StateHasChanged();  // Forzar el re-renderizado
+    }
+
+
+
+    public async Task SeleccionarProducto(Productos productoSeleccionado)
+    {
+        productoId = productoSeleccionado.ProductoId;
+        productoBuscar = productoSeleccionado.Nombre; // Muestra el nombre seleccionado en el campo de texto
+        productosFiltrados.Clear(); // Limpiar la lista después de la selección
+        CalcularMonto(); // O cualquier otra función que necesites
+    }
+
+    public void CalcularMonto()
+    {
+        if (productoId != 0)
+        {
+            var producto = productos.FirstOrDefault(p => p.ProductoId == productoId);
+            if (producto != null)
+            {
+                precioVenta = producto.PrecioVenta;
+                Total = CalcularSubTotal(precioVenta, cantidad, descuento);
+            }
+        }
+    }
+
+    private decimal CalcularSubTotal(decimal precioVenta, int cantidad, decimal descuento)
+    {
+        var totalSinDescuento = precioVenta * cantidad;
+        var descuentoAplicado = (totalSinDescuento * descuento) / 100;
+        return totalSinDescuento - descuentoAplicado;
+    }
+
+    public void CalcularMontoTotal()
+    {
+        // Calcula el total sumando (PrecioVenta * Cantidad) de cada producto más el pago
+        reparacion.Total = reparacion.VentasDetalles.Sum(d => d.PrecioVenta * d.Cantidad) + reparacion.Pago;
+    }
+
+    public string ObtenerNombreProducto(int id)
+    {
+        var producto = productos.FirstOrDefault(p => p.ProductoId == id);
+        return producto?.Nombre ?? "Producto no encontrado";
+    }
+
+
+    public async Task ReducirInventario()
+    {
+        foreach (var detalle in reparacion.VentasDetalles)
+        {
+            var producto = productos.FirstOrDefault(p => p.ProductoId == detalle.ProductoId);
+            if (producto != null)
+            {
+                producto.Cantidad -= detalle.Cantidad;
+                await productosService.Modificar(producto);
+            }
+        }
+    }
+
+    public void AgregarDetalle()
+    {
+        var nuevoDetalle = new VentasDetalle
+            {
+                ProductoId = productoId,
+                Cantidad = cantidad,
+                PrecioVenta = precioVenta,
+                Descuento = descuento,
+                SubTotal = CalcularSubTotal(precioVenta, cantidad, descuento)
+            };
+
+        reparacion.VentasDetalles.Add(nuevoDetalle);
+        MostrarNotificacion("Éxito", "Detalle agregado correctamente.", NotificationSeverity.Success);
+        CalcularMontoTotal();
+    }
+
+    public void EliminarDetalle(VentasDetalle detalle)
+    {
+        reparacion.VentasDetalles.Remove(detalle);
+        MostrarNotificacion("Éxito", "Detalle eliminado correctamente.", NotificationSeverity.Success);
+        CalcularMontoTotal();
+    }
+
+
+    public async Task Modificar()
+    {
+        if (await Validar())
+        {
+            MostrarNotificacion("Error", "Verifique los datos ingresados", NotificationSeverity.Error);
+            return;
+        }
+
+        var modificado = await reparacionesService.Modificar(reparacion);
+        if (modificado)
+        {
+            MostrarNotificacion("Éxito", "Reparación modificada correctamente", NotificationSeverity.Success);
+            await Task.Delay(2000);
+            Volver();
+        }
+    }
+
+    public async Task<bool> Validar()
+    {
+        if (string.IsNullOrEmpty(reparacion.NombreCliente) || string.IsNullOrEmpty(reparacion.MetodoPago) || reparacion.Pago <= 0)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    void Volver()
+    {
+        navigation.NavigateTo("/Reparaciones");
+    }
+
+    void MostrarNotificacion(string titulo, string mensaje, NotificationSeverity severidad)
+    {
+        var notification = new NotificationMessage
+            {
+                Severity = severidad,
+                Summary = titulo,
+                Detail = mensaje,
+                Duration = 3000
+            };
+        notificationService.Notify(notification);
+    }
+}

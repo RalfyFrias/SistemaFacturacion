@@ -1,0 +1,173 @@
+﻿@page "/DeleteReparacion"
+@page "/DeleteReparacion/reparacionId={ReparacionId:int}"
+@using Radzen
+@rendermode InteractiveServer
+@inject NavigationManager navigation
+@inject ReparacionesService reparacionesService
+@inject ProductosService productosService
+@inject NotificationService notificationService
+
+<PageTitle>Eliminar Reparación</PageTitle>
+
+<div class="container mt-4">
+    <div class="card-header bg-danger text-white text-center">
+
+        <h3 class="text-center"><strong>Eliminar Reparación</strong></h3>
+    </div>
+    <div class="card shadow-lg p-4">
+       
+
+        <div class="card-body">
+            <h4><strong>¿Estás seguro de que quieres eliminar esta reparación?</strong></h4>
+            <ul>
+                <li><strong>Fecha:</strong> @reparacion.FechaCreacion.ToString("dd/MM/yyyy")</li>
+                <li><strong>Cliente:</strong> @reparacion.NombreCliente</li>
+                <li><strong>Descripción:</strong> @reparacion.Descripcion</li>
+                <li><strong>Método de Pago:</strong> @reparacion.MetodoPago</li>
+                <li><strong>Pago:</strong> @reparacion.Pago.ToString("N2")</li>
+            </ul>
+
+        </div>
+
+        <!-- Detalles de Venta -->
+        <hr />
+        @if (reparacion.VentasDetalles.Count > 0)
+        {
+            <table class="table table-striped mt-4">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Precio de Venta</th>
+                        <th>Descuento (%)</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var detalle in reparacion.VentasDetalles)
+                    {
+                        <tr>
+                            <td>@ObtenerNombreProducto(detalle.ProductoId)</td>
+                            <td>@detalle.Cantidad</td>
+                            <td>@detalle.PrecioVenta.ToString("N2")</td>
+                            <td>@detalle.Descuento.ToString("N2")</td>
+                            <td>@detalle.SubTotal.ToString("N2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <div class="row">
+                <div class="col text-start">
+                    <p><strong>Total de Productos:</strong> @reparacion.VentasDetalles.Count</p>
+                </div>
+            </div>
+
+        
+
+            <div class="row">
+                <div class="col text-end">
+                    <h5><strong>Total:</strong> $@reparacion.Total.ToString("N2")</h5>
+                </div>
+            </div>
+        }
+        else
+        {
+            <p class="text-danger">No se encontraron detalles de la reparación.</p>
+        }
+
+        <hr />
+
+
+        <!-- Botones -->
+        <div class="mt-4 d-flex justify-content-end">
+            <button type="button" class="btn btn-outline-danger  me-2" @onclick="Volver">
+                <i class="bi bi-box-arrow-left"></i> Volver
+            </button>
+            <button type="button" class="btn btn-outline-danger" @onclick="Eliminar">
+                <i class="bi bi-trash3-fill"></i> Eliminar
+            </button>
+        </div>
+
+    </div>
+</div>
+
+<RadzenNotification />
+
+@code {
+    [Parameter]
+    public int reparacionId { get; set; }
+    private Reparaciones reparacion { get; set; } = new Reparaciones();
+    public List<Productos> productos { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        productos = await productosService.Listar(e => true);
+        reparacion = await reparacionesService.Buscar(reparacionId);
+    }
+
+    public async Task Eliminar()
+    {
+        bool operacionExitosa = true;
+
+        // Primero eliminamos los detalles asociados a la reparación
+        foreach (var detalle in reparacion.VentasDetalles.ToList())
+        {
+            bool detalleEliminado = await reparacionesService.EliminarDetalle(detalle.VentaDetalleId);
+            if (!detalleEliminado)
+            {
+                operacionExitosa = false;
+                MostrarNotificacion("Error", "No se pudo eliminar un detalle de la reparación.", NotificationSeverity.Error);
+                break;
+            }
+        }
+
+        // Luego eliminamos la reparación principal si los detalles fueron eliminados exitosamente
+        if (operacionExitosa)
+        {
+            bool eliminado = await reparacionesService.Eliminar(reparacionId);
+            if (eliminado)
+            {
+                MostrarNotificacion("Éxito", "La reparación fue eliminada correctamente.", NotificationSeverity.Success);
+                await Task.Delay(2000);
+                navigation.NavigateTo("/Reparaciones");
+            }
+            else
+            {
+                MostrarNotificacion("Error", "No se pudo eliminar la reparación.", NotificationSeverity.Error);
+            }
+        }
+
+        StateHasChanged();
+    }
+
+    public string ObtenerNombreProducto(int id)
+    {
+        var dato = productos.FirstOrDefault(c => c.ProductoId == id);
+        return dato?.Nombre ?? "Producto no encontrado";
+    }
+
+    void Volver()
+    {
+        navigation.NavigateTo("/Reparaciones");
+    }
+
+    void MostrarNotificacion(string titulo, string mensaje, NotificationSeverity severidad)
+    {
+        var notification = new NotificationMessage
+            {
+                Severity = severidad,
+                Summary = titulo,
+                Detail = mensaje,
+                Duration = 3000
+            };
+        notificationService.Notify(notification);
+    }
+}
+
+<style>
+    .logo-small {
+        width: 150px;
+        height: auto;
+    }
+</style>

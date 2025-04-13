@@ -7,6 +7,8 @@
 @using Microsoft.AspNetCore.WebUtilities
 @using SistemaFacturacion.Data
 
+
+
 @inject UserManager<ApplicationUser> UserManager
 @inject IUserStore<ApplicationUser> UserStore
 @inject SignInManager<ApplicationUser> SignInManager
@@ -22,7 +24,7 @@
 <div class="row">
     <div class="col-md-4">
         <StatusMessage Message="@Message" />
-        <EditForm Model="Input" OnValidSubmit="RegisterUser">
+        <EditForm Model="Input" asp-route-returnUrl="@ReturnUrl" method="post" OnValidSubmit="RegisterUser" FormName="register">
             <DataAnnotationsValidator />
             <h2>Create a new account.</h2>
             <hr />

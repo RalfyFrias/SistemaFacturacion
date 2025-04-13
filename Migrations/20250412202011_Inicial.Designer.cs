@@ -12,8 +12,8 @@ using SistemaFacturacion.Data;
 namespace SistemaFacturacion.Migrations
 {
     [DbContext(typeof(Contexto))]
-    [Migration("20250410233744_nueva")]
-    partial class nueva
+    [Migration("20250412202011_Inicial")]
+    partial class Inicial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

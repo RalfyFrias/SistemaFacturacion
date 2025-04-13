@@ -1,0 +1,197 @@
+﻿@page "/Reparaciones"
+@rendermode InteractiveServer
+@inject ReparacionesService reparacionesService
+@inject NavigationManager navigation
+
+<PageTitle>Reparaciones</PageTitle>
+<div class="container">
+    <div class="card shadow-lg">
+        @*Header*@
+
+        <div class="card-header bg-danger text-white text-center">
+
+            <h3 class="text-center"><strong>Reparaciónes</strong></h3>
+        </div>
+
+        <div class="card-header">
+            <button type="button" class="btn btn-outline-danger " @onclick="IrACrear"><i class="bi bi-plus-circle" /> Crear</button>
+        </div>
+        @*Body*@
+        <div class="card-body">
+            @if (loading)
+            {
+                <div class="d-flex justify-content-center">
+                    <div class="spinner-border text-info"></div>
+                </div>
+            }
+            else if (reparaciones.Count == 0)
+            {
+                <h1 class="miMensaje"><i class="bi bi-exclamation-triangle" /> No hay reparaciones registradas</h1>
+            }
+            else
+            {
+                @*Campos a Filtrar*@
+                <div class="mb-3">
+                    <div class="row align-items-center">
+                        <label class="form-label" for="filtro"><strong>Campo a Filtrar:</strong></label>
+                        <div class="col-3">
+                            <InputSelect id="filtro" class="form-select" @bind-Value="filtro">
+                                <option selected disabled>Elije una opción</option>
+                                <option value="nombre">Nombre Cliente</option>
+                                <option value="descripcion">Descripción</option>
+                                <option value="metodoPago">Método de Pago</option>
+                            </InputSelect>
+                        </div>
+                        <div class="col-auto miFlecha">
+                            <p>→</p>
+                        </div>
+                        <div class="col-4">
+                            <div class="input-group">
+                                <InputText class="form-control" @bind-Value="valorFiltro" placeholder="Ingrese un dato para filtrar"></InputText>
+                                <button type="button" class="btn btn-outline-danger " @onclick="Buscar"><i class="bi bi-search" /></button>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <button type="button" class="btn btn-outline-secondary" @onclick="Restablecer"><i class="bi bi-arrow-clockwise" /> Restablecer</button>
+                        </div>
+                    </div>
+                </div>
+
+                <table class="table table-bordered miTabla">
+                    <thead>
+                        <tr>
+                            <th>Fecha de Creación</th>
+                            <th>Nombre Cliente</th>
+                            <th>Pago</th>
+                            <th>Descripción</th>
+                            <th>Método de Pago</th>
+                            <th>Total</th>
+                            <th>Actividades</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var reparacion in reparaciones.Skip((paginaActual - 1) * reparacionesPorPagina).Take(reparacionesPorPagina))
+                        {
+                            <tr>
+                                <td>@reparacion.FechaCreacion.ToString("dd/MM/yyyy")</td>
+                                <td>@reparacion.NombreCliente</td>
+                                <td>@reparacion.Pago.ToString("N2")</td>
+                                <td>@reparacion.Descripcion</td>
+                                <td>@reparacion.MetodoPago</td>
+                                <td>@reparacion.Total.ToString("N2")</td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-outline-info" @onclick="()=> IrADetalles(reparacion.ReparacionesId)" data-bs-toggle="tooltip" data-bs-placement="top" title="Ver detalles">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-warning" @onclick="()=> IrAEditar(reparacion.ReparacionesId)"><i class="bi bi-pencil-square"></i></button>
+                                        <button type="button" class="btn btn-outline-danger" @onclick="()=> IrAEliminar(reparacion.ReparacionesId)"><i class="bi bi-trash3-fill"></i></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+                @*Paginación*@
+                <div class="d-flex justify-content-between">
+                    <button class="btn btn-danger " @onclick="PaginaAnterior" disabled="@(paginaActual == 1)">Anterior</button>
+                    <span>Página @paginaActual de @totalPaginas</span>
+                    <button class="btn btn-danger " @onclick="PaginaSiguiente" disabled="@(paginaActual == totalPaginas)">Siguiente</button>
+                </div>
+            }
+        </div>
+
+        @*Footer*@
+        <div class="card-footer">
+            <p><strong>Total de reparaciones:</strong> @reparaciones.Count</p>
+            <p><strong>Total de Pago:</strong> @TotalIngresos.ToString("N2")</p>
+            <p><strong>Total de Reparaciones:</strong> @TotalReparaciones.ToString("N2")</p>
+        </div>
+
+    </div>
+</div>
+
+@code {
+    public List<Reparaciones> reparaciones = new List<Reparaciones>();
+    public string filtro { get; set; }
+    public string valorFiltro { get; set; }
+    public bool loading { get; set; } = true;
+    private int paginaActual = 1;
+    private int reparacionesPorPagina = 10;
+    private int totalPaginas => (int)Math.Ceiling((double)reparaciones.Count / reparacionesPorPagina);
+    private decimal TotalIngresos => reparaciones.Sum(r => r.Pago);
+    public decimal TotalReparaciones { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        reparaciones = await reparacionesService.Listar(e => true);
+        TotalReparaciones = reparaciones.Sum(f => f.VentasDetalles.Sum(fd => fd.SubTotal - (fd.SubTotal * (fd.Descuento / 100)) + fd.Impuesto)) + reparaciones.Sum(r => r.Pago);
+
+        loading = false;
+        if (reparaciones.Count == 0)
+            StateHasChanged();
+    }
+
+    public async Task Buscar()
+    {
+        reparaciones = await reparacionesService.Listar(e => true);
+        if (!string.IsNullOrEmpty(valorFiltro))
+        {
+            reparaciones = reparaciones.Where(e => (filtro == "nombre" && e.NombreCliente.Contains(valorFiltro, StringComparison.OrdinalIgnoreCase)) ||
+            (filtro == "descripcion" && e.Descripcion.Contains(valorFiltro, StringComparison.OrdinalIgnoreCase)) ||
+            (filtro == "metodoPago" && e.MetodoPago.Contains(valorFiltro, StringComparison.OrdinalIgnoreCase))).ToList();
+        }
+        paginaActual = 1;
+        TotalReparaciones = reparaciones.Sum(f => f.VentasDetalles.Sum(fd => fd.SubTotal - (fd.SubTotal * (fd.Descuento / 100)) + fd.Impuesto)) + reparaciones.Sum(r => r.Pago);
+    }
+
+    public async Task Restablecer()
+    {
+        reparaciones = await reparacionesService.Listar(e => true);
+        TotalReparaciones = reparaciones.Sum(f => f.VentasDetalles.Sum(fd => fd.SubTotal - (fd.SubTotal * (fd.Descuento / 100)) + fd.Impuesto)) + reparaciones.Sum(r => r.Pago);
+        paginaActual = 1;
+    }
+
+    public void IrACrear()
+    {
+        navigation.NavigateTo("/CreateReparaciones");
+    }
+
+    public void IrADetalles(int id)
+    {
+        navigation.NavigateTo($"/ViewReparacion/reparacionId={id}");
+    }
+
+    public void IrAEditar(int id)
+    {
+        navigation.NavigateTo($"/EditReparacion/reparacionId={id}");
+    }
+
+    public void IrAEliminar(int id)
+    {
+        navigation.NavigateTo($"/DeleteReparacion/reparacionId={id}");
+    }
+
+    public void PaginaAnterior()
+    {
+        if (paginaActual > 1)
+        {
+            paginaActual--;
+        }
+    }
+
+    public void PaginaSiguiente()
+    {
+        if (paginaActual < totalPaginas)
+        {
+            paginaActual++;
+        }
+    }
+
+    void Volver()
+    {
+        navigation.NavigateTo("/home");
+    }
+}
+
